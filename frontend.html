@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Email Analytics API - Interface</title>
+   <style>
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           min-height: 100vh;
+           padding: 20px;
+       }
+
+       .container {
+           max-width: 1200px;
+           margin: 0 auto;
+           background: white;
+           border-radius: 15px;
+           box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+           overflow: hidden;
+       }
+
+       .header {
+           background: linear-gradient(45deg, #2c3e50, #3498db);
+           color: white;
+           padding: 30px;
+           text-align: center;
+       }
+
+       .header h1 {
+           font-size: 2.5rem;
+           margin-bottom: 10px;
+       }
+
+       .header p {
+           opacity: 0.9;
+           font-size: 1.1rem;
+       }
+
+       .content {
+           padding: 30px;
+       }
+
+       .section {
+           background: #f8f9fa;
+           border-radius: 10px;
+           padding: 25px;
+           margin-bottom: 25px;
+           border-left: 4px solid #3498db;
+       }
+
+       .section h2 {
+           color: #2c3e50;
+           margin-bottom: 20px;
+           font-size: 1.5rem;
+           display: flex;
+           align-items: center;
+       }
+
+       .section h2::before {
+           content: "🎯";
+           margin-right: 10px;
+           font-size: 1.2rem;
+       }
+
+       .form-group {
+           margin-bottom: 20px;
+       }
+
+       label {
+           display: block;
+           margin-bottom: 8px;
+           font-weight: 600;
+           color: #2c3e50;
+       }
+
+       input, select, button {
+           width: 100%;
+           padding: 12px 15px;
+           border: 2px solid #e0e6ed;
+           border-radius: 8px;
+           font-size: 1rem;
+           transition: all 0.3s ease;
+       }
+
+       input:focus, select:focus {
+           outline: none;
+           border-color: #3498db;
+           box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+       }
+
+       button {
+           background: linear-gradient(45deg, #3498db, #2ecc71);
+           color: white;
+           border: none;
+           cursor: pointer;
+           font-weight: 600;
+           text-transform: uppercase;
+           letter-spacing: 0.5px;
+           margin-top: 10px;
+       }
+
+       button:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+       }
+
+       button:disabled {
+           background: #bdc3c7;
+           cursor: not-allowed;
+           transform: none;
+       }
+
+       .grid {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+           gap: 20px;
+       }
+
+       .result {
+           background: #ecf0f1;
+           border-radius: 8px;
+           padding: 20px;
+           margin-top: 20px;
+           font-family: 'Courier New', monospace;
+           font-size: 0.9rem;
+           max-height: 400px;
+           overflow-y: auto;
+       }
+
+       .result.success {
+           background: #d5f4e6;
+           border-left: 4px solid #27ae60;
+       }
+
+       .result.error {
+           background: #fadbd8;
+           border-left: 4px solid #e74c3c;
+       }
+
+       .loading {
+           display: none;
+           text-align: center;
+           padding: 20px;
+       }
+
+       .spinner {
+           border: 4px solid #f3f3f3;
+           border-top: 4px solid #3498db;
+           border-radius: 50%;
+           width: 40px;
+           height: 40px;
+           animation: spin 1s linear infinite;
+           margin: 0 auto 10px;
+       }
+
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
+
+       .status-indicator {
+           display: inline-block;
+           width: 12px;
+           height: 12px;
+           border-radius: 50%;
+           margin-right: 8px;
+       }
+
+       .status-online {
+           background: #27ae60;
+           animation: pulse 2s infinite;
+       }
+
+       .status-offline {
+           background: #e74c3c;
+       }
+
+       @keyframes pulse {
+           0% { opacity: 1; }
+           50% { opacity: 0.5; }
+           100% { opacity: 1; }
+       }
+
+       .api-status {
+           position: fixed;
+           top: 20px;
+           right: 20px;
+           background: white;
+           padding: 10px 15px;
+           border-radius: 8px;
+           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+           font-weight: 600;
+       }
+
+       .stats {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+           gap: 15px;
+           margin-top: 20px;
+       }
+
+       .stat-card {
+           background: white;
+           padding: 20px;
+           border-radius: 8px;
+           text-align: center;
+           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+       }
+
+       .stat-value {
+           font-size: 2rem;
+           font-weight: bold;
+           color: #3498db;
+       }
+
+       .stat-label {
+           color: #7f8c8d;
+           margin-top: 5px;
+       }
+   </style>
+</head>
+<body>
+   <div class="api-status">
+       <span class="status-indicator status-offline" id="statusIndicator"></span>
+       <span id="statusText">Verificando API...</span>
+   </div>
+
+   <div class="container">
+       <div class="header">
+           <h1>📊 Email Analytics API</h1>
+           <p>Interface para análise de dados de email - Avaliação Desenvolvedor Python</p>
+       </div>
+
+       <div class="content">
+           <!-- Upload de Arquivo -->
+           <div class="section">
+               <h2>📤 Upload de Arquivo</h2>
+               <div class="form-group">
+                   <label for="filename">Nome do arquivo (apenas A-Z, a-z, 0-9, -, _):</label>
+                   <input type="text" id="filename" placeholder="Ex: dados_email" value="dados_teste">
+               </div>
+               <div class="form-group">
+                   <label for="fileInput">Selecionar arquivo:</label>
+                   <input type="file" id="fileInput" accept=".txt,.csv">
+               </div>
+               <button onclick="uploadFile()">📤 Fazer Upload</button>
+               <div class="loading" id="uploadLoading">
+                   <div class="spinner"></div>
+                   <p>Fazendo upload...</p>
+               </div>
+               <div id="uploadResult" class="result" style="display:none;"></div>
+           </div>
+
+           <div class="grid">
+               <!-- Listagem de Arquivos -->
+               <div class="section">
+                   <h2>📋 Arquivos Armazenados</h2>
+                   <button onclick="listFiles()">🔄 Atualizar Lista</button>
+                   <div id="filesList" class="result" style="display:none;"></div>
+               </div>
+
+               <!-- Análise de Size -->
+               <div class="section">
+                   <h2>📊 Análise de Size</h2>
+                   <div class="form-group">
+                       <label for="analyzeFile">Arquivo para análise:</label>
+                       <input type="text" id="analyzeFile" placeholder="nome_do_arquivo" value="dados_teste">
+                   </div>
+                   <button onclick="getMaxSize()">📈 Maior Size</button>
+                   <button onclick="getMinSize()">📉 Menor Size (Bônus)</button>
+                   <div id="sizeResult" class="result" style="display:none;"></div>
+               </div>
+           </div>
+
+           <!-- Usuários Ordenados -->
+           <div class="section">
+               <h2>📝 Usuários Ordenados</h2>
+               <div class="grid">
+                   <div class="form-group">
+                       <label for="orderFile">Arquivo:</label>
+                       <input type="text" id="orderFile" placeholder="nome_do_arquivo" value="dados_teste">
+                   </div>
+                   <div class="form-group">
+                       <label for="orderDirection">Ordenação:</label>
+                       <select id="orderDirection">
+                           <option value="asc">📈 Crescente (A-Z)</option>
+                           <option value="desc">📉 Decrescente (Z-A)</option>
+                       </select>
+                   </div>
+                   <div class="form-group">
+                       <label for="orderPage">Página:</label>
+                       <input type="number" id="orderPage" value="1" min="1">
+                   </div>
+                   <div class="form-group">
+                       <label for="orderPageSize">Itens por página:</label>
+                       <input type="number" id="orderPageSize" value="5" min="1" max="100">
+                   </div>
+                   <div class="form-group">
+                       <label for="usernameFilter">Filtro por username (Bônus):</label>
+                       <input type="text" id="usernameFilter" placeholder="Ex: uol">
+                   </div>
+               </div>
+               <button onclick="getOrderedUsers()">🔍 Buscar Usuários</button>
+               <div id="orderResult" class="result" style="display:none;"></div>
+           </div>
+
+           <!-- Usuários por Faixa -->
+           <div class="section">
+               <h2>📬 Usuários por Faixa de Mensagens</h2>
+               <div class="grid">
+                   <div class="form-group">
+                       <label for="rangeFile">Arquivo:</label>
+                       <input type="text" id="rangeFile" placeholder="nome_do_arquivo" value="dados_teste">
+                   </div>
+                   <div class="form-group">
+                       <label for="minMessages">Mínimo de mensagens:</label>
+                       <input type="number" id="minMessages" value="1000000" min="0">
+                   </div>
+                   <div class="form-group">
+                       <label for="maxMessages">Máximo de mensagens:</label>
+                       <input type="number" id="maxMessages" value="3000000" min="0">
+                   </div>
+                   <div class="form-group">
+                       <label for="rangePage">Página:</label>
+                       <input type="number" id="rangePage" value="1" min="1">
+                   </div>
+                   <div class="form-group">
+                       <label for="rangePageSize">Itens por página:</label>
+                       <input type="number" id="rangePageSize" value="5" min="1" max="100">
+                   </div>
+               </div>
+               <button onclick="getUsersBetween()">🔍 Buscar por Faixa</button>
+               <div id="rangeResult" class="result" style="display:none;"></div>
+           </div>
+
+           <!-- Estatísticas -->
+           <div class="section">
+               <h2>📈 Estatísticas</h2>
+               <div class="stats" id="stats">
+                   <div class="stat-card">
+                       <div class="stat-value" id="totalFiles">-</div>
+                       <div class="stat-label">Arquivos</div>
+                   </div>
+                   <div class="stat-card">
+                       <div class="stat-value" id="totalRequests">0</div>
+                       <div class="stat-label">Requisições</div>
+                   </div>
+                   <div class="stat-card">
+                       <div class="stat-value" id="successRate">100%</div>
+                       <div class="stat-label">Taxa Sucesso</div>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+   <script>
+       const API_URL = 'http://localhost:8000/api/v1';
+       const HEALTH_URL = 'http://localhost:8000/health';
+       
+       let requestCount = 0;
+       let successCount = 0;
+
+       // Verificar status da API
+       async function checkAPIStatus() {
+           try {
+               const response = await fetch(HEALTH_URL);
+               if (response.ok) {
+                   document.getElementById('statusIndicator').className = 'status-indicator status-online';
+                   document.getElementById('statusText').textContent = 'API Online';
+                   return true;
+               } else {
+                   throw new Error('API não respondeu');
+               }
+           } catch (error) {
+               document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+               document.getElementById('statusText').textContent = 'API Offline';
+               return false;
+           }
+       }
+
+       // Função genérica para fazer requisições
+       async function makeRequest(url, options = {}) {
+           requestCount++;
+           updateStats();
+           
+           try {
+               const response = await fetch(url, options);
+               const data = await response.json();
+               
+               if (response.ok) {
+                   successCount++;
+                   updateStats();
+                   return { success: true, data, status: response.status };
+               } else {
+                   return { success: false, data, status: response.status };
+               }
+           } catch (error) {
+               return { success: false, error: error.message };
+           }
+       }
+
+       // Atualizar estatísticas
+       function updateStats() {
+           document.getElementById('totalRequests').textContent = requestCount;
+           const rate = requestCount > 0 ? Math.round((successCount / requestCount) * 100) : 100;
+           document.getElementById('successRate').textContent = rate + '%';
+       }
+
+       // Mostrar resultado
+       function showResult(elementId, result, loading = null) {
+           if (loading) {
+               loading.style.display = 'none';
+           }
+           
+           const element = document.getElementById(elementId);
+           element.style.display = 'block';
+           
+           if (result.success) {
+               element.className = 'result success';
+               element.innerHTML = `<strong>✅ Sucesso (${result.status}):</strong><br><pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+           } else {
+               element.className = 'result error';
+               element.innerHTML = `<strong>❌ Erro ${result.status || ''}:</strong><br><pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>`;
+           }
+       }
+
+       // Upload de arquivo
+       async function uploadFile() {
+           const filename = document.getElementById('filename').value.trim();
+           const fileInput = document.getElementById('fileInput');
+           const loading = document.getElementById('uploadLoading');
+           
+           if (!filename) {
+               alert('Digite um nome para o arquivo');
+               return;
+           }
+           
+           if (!fileInput.files[0]) {
+               alert('Selecione um arquivo');
+               return;
+           }
+           
+           loading.style.display = 'block';
+           
+           const formData = new FormData();
+           formData.append('file', fileInput.files[0]);
+           
+           const result = await makeRequest(`${API_URL}/files/${filename}`, {
+               method: 'PUT',
+               body: formData
+           });
+           
+           showResult('uploadResult', result, loading);
+           
+           if (result.success) {
+               listFiles(); // Atualizar lista
+           }
+       }
+
+       // Listar arquivos
+       async function listFiles() {
+           const result = await makeRequest(`${API_URL}/files`);
+           showResult('filesList', result);
+           
+           if (result.success && result.data.total_items !== undefined) {
+               document.getElementById('totalFiles').textContent = result.data.total_items;
+           }
+       }
+
+       // Maior size
+       async function getMaxSize() {
+           const filename = document.getElementById('analyzeFile').value.trim();
+           if (!filename) {
+               alert('Digite o nome do arquivo');
+               return;
+           }
+           
+           const result = await makeRequest(`${API_URL}/files/${filename}/max-size`);
+           showResult('sizeResult', result);
+       }
+
+       // Menor size
+       async function getMinSize() {
+           const filename = document.getElementById('analyzeFile').value.trim();
+           if (!filename) {
+               alert('Digite o nome do arquivo');
+               return;
+           }
+           
+           const result = await makeRequest(`${API_URL}/files/${filename}/min-size`);
+           showResult('sizeResult', result);
+       }
+
+       // Usuários ordenados
+       async function getOrderedUsers() {
+           const filename = document.getElementById('orderFile').value.trim();
+           const order = document.getElementById('orderDirection').value;
+           const page = document.getElementById('orderPage').value;
+           const pageSize = document.getElementById('orderPageSize').value;
+           const username = document.getElementById('usernameFilter').value.trim();
+           
+           if (!filename) {
+               alert('Digite o nome do arquivo');
+               return;
+           }
+           
+           let url = `${API_URL}/files/${filename}/users?order=${order}&page=${page}&page_size=${pageSize}`;
+           if (username) {
+               url += `&username=${username}`;
+           }
+           
+           const result = await makeRequest(url);
+           showResult('orderResult', result);
+       }
+
+       // Usuários por faixa
+       async function getUsersBetween() {
+           const filename = document.getElementById('rangeFile').value.trim();
+           const minMessages = document.getElementById('minMessages').value;
+           const maxMessages = document.getElementById('maxMessages').value;
+           const page = document.getElementById('rangePage').value;
+           const pageSize = document.getElementById('rangePageSize').value;
+           
+           if (!filename) {
+               alert('Digite o nome do arquivo');
+               return;
+           }
+           
+           if (parseInt(minMessages) > parseInt(maxMessages)) {
+               alert('Mínimo não pode ser maior que máximo');
+               return;
+           }
+           
+           const url = `${API_URL}/files/${filename}/users/between?min_messages=${minMessages}&max_messages=${maxMessages}&page=${page}&page_size=${pageSize}`;
+           
+           const result = await makeRequest(url);
+           showResult('rangeResult', result);
+       }
+
+       // Inicialização
+       document.addEventListener('DOMContentLoaded', async function() {
+           await checkAPIStatus();
+           listFiles();
+           
+           // Verificar status da API a cada 30 segundos
+           setInterval(checkAPIStatus, 30000);
+       });
+   </script>
+</body>
+</html>
